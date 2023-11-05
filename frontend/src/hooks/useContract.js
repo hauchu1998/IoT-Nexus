@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { ethers, Contract } from "ethers";
 import senderAbi from "@/abis/senderAbi";
 import receiverAbi from "@/abis/receiverAbi";
+import useEtherWallet from "./useEtherWallet";
 
 const env = import.meta.env;
 
@@ -8,10 +10,9 @@ const useContract = () => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   const senderRouter = env.VITE_SENDER_ROUTER || "";
-  const senderContract = new Contract(
-    env.VITE_SENDER_ADDERSS || "",
-    senderAbi,
-    signer
+  const senderContract = useMemo(
+    () => new Contract(env.VITE_SENDER_ADDERSS || "", senderAbi, signer),
+    [signer]
   );
 
   const receiverRouter = env.VITE_RECEIVER_ROUTER || "";

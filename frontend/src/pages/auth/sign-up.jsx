@@ -32,13 +32,14 @@ export function SignUp() {
   };
 
   const handleConnectWallet = async () => {
-    const defaultAddress = await connectWallet();
-    await switchNetwork(SENDER_NETWORK);
+    // const defaultAddress = await connectWallet();
+    // await switchNetwork(SENDER_NETWORK);
     // send Post to backend
     const data = {
-      walletAddress: defaultAddress,
+      wallet_address: "0xE2A794de195D92bBA0BA64e006FcC3568104245d",
     };
-    // const response = await getKey(data);
+    const response = await getKey(data);
+    console.log(response);
   };
 
   const handleSetValidator = async () => {
@@ -49,7 +50,8 @@ export function SignUp() {
     });
 
     const receipt = await tx.wait();
-    console.log(receipt);
+    const validator = await senderContract.getValidator(address);
+    console.log(validator);
     setIsLoading(false);
   };
 
@@ -107,10 +109,7 @@ export function SignUp() {
               Sign Up
             </Button>
             {isLoading && (
-              <Typography
-                variant="small"
-                className="mt-6 flex justify-center text-red-400"
-              >
+              <Typography variant="small" className="mt-6 flex justify-center">
                 Loading...
               </Typography>
             )}
