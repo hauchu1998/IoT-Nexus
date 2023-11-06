@@ -28,8 +28,8 @@ import { ethers } from "ethers";
 import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
 
-function CcipComponent({ sent }) {
-  if (!sent) {
+function CcipComponent({ sent, completion }) {
+  if (!sent && completion > 0.7) {
     return (
       <div className="container w-[70%]">
         <Button color="green" size="" className="w-full">
@@ -68,7 +68,11 @@ export function UserData() {
       )
       .map((message) => {
         console.log(message);
-        const rate = getCompletionRate(message.signed_validators, totalWeight);
+        let rate = getCompletionRate(message.signed_validators, totalWeight);
+        /* TODO: remove tmp madeup number */
+        while (rate > 1) {
+          rate /= 10;
+        }
         return {
           ...message,
           completion: rate,
@@ -112,7 +116,7 @@ export function UserData() {
 
   useEffect(() => {
     if (address) {
-      handleGetData();
+      // handleGetData();
       handleGetTotalWeight();
     }
   }, [address]);
@@ -152,9 +156,8 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${
-                    index + 1
-                  }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${index + 1
+                    }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -219,11 +222,10 @@ export function UserData() {
                         },
                         key
                       ) => {
-                        const className = `py-3 px-5 ${
-                          key === messages.length - 1
-                            ? ""
-                            : "border-b border-blue-gray-50"
-                        }`;
+                        const className = `py-3 px-5 ${key === messages.length - 1
+                          ? ""
+                          : "border-b border-blue-gray-50"
+                          }`;
 
                         return (
                           <tr key={message}>
@@ -295,7 +297,7 @@ export function UserData() {
                               </Typography>
                             </td>
                             <td className={`flex-center-wrap ${className}`}>
-                              <CcipComponent sent={ccip_sent} />
+                              <CcipComponent sent={ccip_sent} completion={completion} />
                             </td>
                           </tr>
                         );
