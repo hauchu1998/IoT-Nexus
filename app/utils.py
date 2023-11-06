@@ -18,7 +18,7 @@ def gen_sk() -> PrivateKey:
     return PrivateKey(curve=curve)
 
 
-def handle_event(event, event_template):
+def handle_polygon_event(event, event_template):
     try:
         result = get_event_data(
             event_template.w3.codec,
@@ -28,6 +28,11 @@ def handle_event(event, event_template):
         return True, result
     except:
         return False, None
+
+
+def handle_sepolia_event(event_template, from_block=0):
+    logs = event_template().get_logs(fromBlock=from_block)
+    return logs
 
 
 def sign_message(message: str, attestor: Attestor) -> Signature:
@@ -48,12 +53,16 @@ def get_abi():
 
 def get_w3():
     w3 = Web3(Web3.HTTPProvider(
-        'https://polygon-mumbai.infura.io/v3/23a668257ecb4ece82ff765e85972ef7'))
+        'https://sepolia.infura.io/v3/23a668257ecb4ece82ff765e85972ef7'))
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
     return w3
 
 
-def get_contract(w3=get_w3(), contract_address=get_contract_address(), abi=get_abi()):
+def get_contract(
+    w3=get_w3(),
+    contract_address=get_contract_address(),
+    abi=get_abi()
+):
     return w3.eth.contract(address=contract_address, abi=abi)
 
 
