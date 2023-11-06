@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { isValidWalletAddress } from "@/utils/address";
 
+const SENDER_NETWORK = import.meta.env.VITE_SENDER_NETWORK;
+
 const useEtherWallet = (path) => {
   const [isConnect, setIsConnect] = useState(false);
   const [address, setAddress] = useState();
@@ -49,6 +51,7 @@ const useEtherWallet = (path) => {
   useEffect(() => {
     if (path !== "sign-up" && path !== "sign-in") {
       connectWallet();
+      switchNetwork(SENDER_NETWORK);
     }
   }, [path]);
 

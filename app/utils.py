@@ -57,7 +57,7 @@ def get_contract(w3=get_w3(), contract_address=get_contract_address(), abi=get_a
     return w3.eth.contract(address=contract_address, abi=abi)
 
 
-def call_function(function, *arg, gas_limit=200000, value=0, w3=get_w3()):
+def call_contract(function, *arg, gas_limit=200000, value=0, w3=get_w3()):
     account = Account.from_key(API_KEY)
     nonce = w3.eth.get_transaction_count(account.address)
     txn = function(*arg).build_transaction({

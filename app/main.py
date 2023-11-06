@@ -141,7 +141,7 @@ async def signup(
     wallet_address: Annotated[str, Form()],
     weight: Annotated[int, Form()]
 ):
-    if wallet_address not in db.validators:
+    if wallet_address not in db.tmp_key_map:
         return Response(status_code=404)
     sk = db.get_tmp_key_map(wallet_address)
 

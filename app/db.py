@@ -89,14 +89,21 @@ def get_messages():
 
 # Create validators and messages for testing
 N_VALIDATORS = 10
-N_MESSAGES = 10
-for _ in range(N_VALIDATORS):
+N_MESSAGES = 100
+for i in range(N_VALIDATORS):
     sk = gen_sk()
     pk = sk.get_public_key()
 
     weight = random.randint(10000, 5000000)
-    address = "0x" + "".join([random.choice("0123456789abcdef")
-                             for _ in range(40)])
+    if i < 6:
+        address = "0x" + "".join([random.choice("0123456789abcdef")
+                                  for _ in range(40)])
+    elif i == 6:
+        address = "0xf8eB03DDa6a206504C21a27f625067Ce8EfeC8bd"
+    elif i == 7:
+        address = "0x3C4d46281Ace9ddd5fAB8438B6dfB92C553860E0"
+    else:
+        address = "0xE2A794de195D92bBA0BA64e006FcC3568104245d"
     tmp_key_map[address] = sk
 
     validator = Validator(

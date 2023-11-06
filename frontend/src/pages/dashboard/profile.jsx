@@ -28,60 +28,24 @@ import { ethers } from "ethers";
 import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
 
-let messages = await getMessages();
-let validator_address = null;
-while (validator_address == null) {
-  for (let i = 0; i < messages.length; i++) {
-    if (messages[i].signed_validators.length > 0) {
-      validator_address = messages[i].signed_validators[0].wallet_address;
-      break;
-    }
-  }
-}
-let total_weight = 0;
-let num_v = 0;
-messages.map(({ signed_validators }, key) => {
-  signed_validators.map(({ weight }, key) => {
-    total_weight += weight;
-  });
-  num_v += 1;
-  total_weight = total_weight / num_v;
-});
-function SignComponent({ signed_validators, validator_address }) {
-  let signed = false;
-  signed_validators.map(({ wallet_address }, key) => {
-    if (wallet_address == validator_address) {
-      signed = true;
-    }
-  });
-  if (!signed) {
+function CcipComponent({ sent, completion }) {
+  if (!sent && completion > 0.7) {
     return (
       <div className="container w-[70%]">
         <Button color="green" size="" className="w-full">
-          Approve
-        </Button>{" "}
-      </div>
-    );
-  } else {
-    return (
-      <div className="container w-[70%]">
-        <Button disabled color="light-green" className="w-full">
-          Signed
+          Send
         </Button>
       </div>
     );
   }
 }
 
-function getCompletionRate(signed_validators) {
+function getCompletionRate(signed_validators, total_weight) {
   let signed_weight = 0;
   signed_validators.map(({ weight }, key) => {
     signed_weight += weight;
   });
   let rate = signed_weight / total_weight;
-  while (rate > 1) {
-    rate /= 10;
-  }
   return rate.toPrecision(2);
 }
 
@@ -93,6 +57,29 @@ export function UserData() {
   const [isStoreLoading, setIsStoreLoading] = useState(false);
   const [isGenerateLoading, setIsGenerateLoading] = useState(false);
   const [totalWeight, setTotalWeight] = useState();
+  const [messages, setMessages] = useState();
+
+  const handleGetMessages = async (totalWeight) => {
+    const rawMessages = await getMessages();
+    if (rawMessages === undefined) return;
+    const enrichedMessages = rawMessages
+      .filter(
+        (message) => message.created_by.toLowerCase() === address.toLowerCase()
+      )
+      .map((message) => {
+        console.log(message);
+        let rate = getCompletionRate(message.signed_validators, totalWeight);
+        /* TODO: remove tmp madeup number */
+        while (rate > 1) {
+          rate /= 10;
+        }
+        return {
+          ...message,
+          completion: rate,
+        };
+      });
+    setMessages(enrichedMessages);
+  };
 
   const handleGetTotalWeight = async () => {
     const weight = await senderContract.totalStakes();
@@ -129,10 +116,16 @@ export function UserData() {
 
   useEffect(() => {
     if (address) {
-      handleGetData();
+      // handleGetData();
       handleGetTotalWeight();
     }
   }, [address]);
+
+  useEffect(() => {
+    if (address === undefined || totalWeight === undefined) return;
+    console.log(address, totalWeight);
+    handleGetMessages(totalWeight);
+  }, [totalWeight, address]);
 
   return (
     <>
@@ -163,9 +156,8 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${
-                    index + 1
-                  }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${index + 1
+                    }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -199,10 +191,9 @@ export function UserData() {
                     {[
                       "messages",
                       "members",
-                      "company",
                       "completion",
                       "create at",
-                      "decision",
+                      "ccip",
                     ].map((el) => (
                       <th
                         key={el}
@@ -219,40 +210,46 @@ export function UserData() {
                   </tr>
                 </thead>
                 <tbody>
-                  {messages.map(
-                    (
-                      { message, signed_validators, created_by, created_at },
-                      key
-                    ) => {
-                      const className = `py-3 px-5 ${
-                        key === messages.length - 1
+                  {messages &&
+                    messages.map(
+                      (
+                        {
+                          message,
+                          signed_validators,
+                          created_at,
+                          ccip_sent,
+                          completion,
+                        },
+                        key
+                      ) => {
+                        const className = `py-3 px-5 ${key === messages.length - 1
                           ? ""
                           : "border-b border-blue-gray-50"
-                      }`;
+                          }`;
 
-                      return (
-                        <tr key={message}>
-                          <td className={className}>
-                            <div className="flex items-center gap-4">
-                              {/* <Avatar src={img} alt={message} size="sm" /> */}
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className="font-bold"
-                              >
-                                {message}
-                              </Typography>
-                            </div>
-                          </td>
-                          <td className={`${className}`}>
-                            <div className="members-container">
-                              {signed_validators.map(
-                                ({ wallet_address, weight }, key) => (
-                                  <Tooltip
-                                    key={wallet_address}
-                                    content={wallet_address}
-                                  >
-                                    {/* <Avatar
+                        return (
+                          <tr key={message}>
+                            <td className={className}>
+                              <div className="flex items-center gap-4">
+                                {/* <Avatar src={img} alt={message} size="sm" /> */}
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-bold"
+                                >
+                                  {message}
+                                </Typography>
+                              </div>
+                            </td>
+                            <td className={`${className}`}>
+                              <div className="members-container">
+                                {signed_validators.map(
+                                  ({ wallet_address, weight }, key) => (
+                                    <Tooltip
+                                      key={wallet_address}
+                                      content={wallet_address}
+                                    >
+                                      {/* <Avatar
                                 src={img}
                                 alt={name}
                                 size="xs"
@@ -261,70 +258,51 @@ export function UserData() {
                                   key === 0 ? "" : "-ml-2.5"
                                 }`}
                               /> */}
-                                    <Blockies
-                                      data-testid="avatar"
-                                      seed={wallet_address.toLowerCase() || ""}
-                                      scale={5}
-                                      size={3}
-                                      className="rounded-full"
-                                    />
-                                  </Tooltip>
-                                )
-                              )}
-                            </div>
-                          </td>
-                          <td className={`${className}`}>
-                            <div className="container">
-                              <Blockies
-                                data-testid="avatar"
-                                seed={created_by.toLowerCase() || ""}
-                                scale={5}
-                                size={5}
-                                className="rounded-full"
-                              />
+                                      <Blockies
+                                        data-testid="avatar"
+                                        seed={
+                                          wallet_address.toLowerCase() || ""
+                                        }
+                                        scale={5}
+                                        size={3}
+                                        className="rounded-full"
+                                      />
+                                    </Tooltip>
+                                  )
+                                )}
+                              </div>
+                            </td>
+                            <td className={className}>
+                              <div className="w-10/12">
+                                <Typography
+                                  variant="small"
+                                  className="mb-1 block text-xs font-medium text-blue-gray-600"
+                                >
+                                  {completion * 100}%
+                                </Typography>
+                                <Progress
+                                  value={100}
+                                  variant="gradient"
+                                  color={99 === 100 ? "green" : "blue"}
+                                  className="h-1"
+                                />
+                              </div>
+                            </td>
+                            <td className={className}>
                               <Typography
                                 variant="small"
                                 className="text-xs font-medium text-blue-gray-600"
-                                style={{ paddingLeft: "10px" }}
                               >
-                                {created_by}
+                                {created_at}
                               </Typography>
-                            </div>
-                          </td>
-                          <td className={className}>
-                            <div className="w-10/12">
-                              <Typography
-                                variant="small"
-                                className="mb-1 block text-xs font-medium text-blue-gray-600"
-                              >
-                                {getCompletionRate(signed_validators) * 100}%
-                              </Typography>
-                              <Progress
-                                value={100}
-                                variant="gradient"
-                                color={99 === 100 ? "green" : "blue"}
-                                className="h-1"
-                              />
-                            </div>
-                          </td>
-                          <td className={className}>
-                            <Typography
-                              variant="small"
-                              className="text-xs font-medium text-blue-gray-600"
-                            >
-                              {created_at}
-                            </Typography>
-                          </td>
-                          <td className={`flex-center-wrap ${className}`}>
-                            <SignComponent
-                              signed_validators={signed_validators}
-                              validator_address={validator_address}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    }
-                  )}
+                            </td>
+                            <td className={`flex-center-wrap ${className}`}>
+                              <CcipComponent sent={ccip_sent} completion={completion} />
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
                 </tbody>
               </table>
             </CardBody>
