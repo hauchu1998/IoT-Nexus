@@ -29,59 +29,24 @@ import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
 
 let messages = await getMessages();
-let validator_address = null;
-while (validator_address == null) {
-  for (let i = 0; i < messages.length; i++) {
-    if (messages[i].signed_validators.length > 0) {
-      validator_address = messages[i].signed_validators[0].wallet_address;
-      break;
-    }
-  }
-}
-let total_weight = 0;
-let num_v = 0;
-messages.map(({ signed_validators }, key) => {
-  signed_validators.map(({ weight }, key) => {
-    total_weight += weight;
-  });
-  num_v += 1;
-  total_weight = total_weight / num_v;
-});
-function SignComponent({ signed_validators, validator_address }) {
-  let signed = false;
-  signed_validators.map(({ wallet_address }, key) => {
-    if (wallet_address == validator_address) {
-      signed = true;
-    }
-  });
-  if (!signed) {
+function CcipComponent({ sent }) {
+  if (!sent) {
     return (
       <div className="container w-[70%]">
         <Button color="green" size="" className="w-full">
-          Approve
-        </Button>{" "}
-      </div>
-    );
-  } else {
-    return (
-      <div className="container w-[70%]">
-        <Button disabled color="light-green" className="w-full">
-          Signed
+          Send
         </Button>
       </div>
     );
   }
 }
 
-function getCompletionRate(signed_validators) {
+function getCompletionRate(signed_validators, total_weight) {
   let signed_weight = 0;
   signed_validators.map(({ weight }, key) => {
     signed_weight += weight;
   });
   let rate = signed_weight / total_weight;
-  while (rate > 1) {
-    rate /= 10;
-  }
   return rate.toPrecision(2);
 }
 
@@ -134,6 +99,18 @@ export function UserData() {
     }
   }, [address]);
 
+  useEffect(() => {
+    if (address === undefined || messages === undefined) return;
+
+    messages = messages.map(({ signed_validators, created_by }, key) => {
+      if (created_by == address) {
+        rate = getCompletionRate(signed_validators, totalWeight);
+        self["completion"] = rate;
+        return self
+      }
+    })
+  }, [totalWeight])
+
   return (
     <>
       <div className="relative mt-8 h-72 w-full overflow-hidden rounded-xl bg-[url(https://images.unsplash.com/photo-1531512073830-ba890ca4eba2?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80)] bg-cover	bg-center">
@@ -163,9 +140,8 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${
-                    index + 1
-                  }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${index + 1
+                    }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -199,10 +175,9 @@ export function UserData() {
                     {[
                       "messages",
                       "members",
-                      "company",
                       "completion",
                       "create at",
-                      "decision",
+                      "ccip",
                     ].map((el) => (
                       <th
                         key={el}
@@ -221,14 +196,13 @@ export function UserData() {
                 <tbody>
                   {messages.map(
                     (
-                      { message, signed_validators, created_by, created_at },
+                      { message, signed_validators, created_at, ccip_sent, completion },
                       key
                     ) => {
-                      const className = `py-3 px-5 ${
-                        key === messages.length - 1
-                          ? ""
-                          : "border-b border-blue-gray-50"
-                      }`;
+                      const className = `py-3 px-5 ${key === messages.length - 1
+                        ? ""
+                        : "border-b border-blue-gray-50"
+                        }`;
 
                       return (
                         <tr key={message}>
@@ -273,31 +247,13 @@ export function UserData() {
                               )}
                             </div>
                           </td>
-                          <td className={`${className}`}>
-                            <div className="container">
-                              <Blockies
-                                data-testid="avatar"
-                                seed={created_by.toLowerCase() || ""}
-                                scale={5}
-                                size={5}
-                                className="rounded-full"
-                              />
-                              <Typography
-                                variant="small"
-                                className="text-xs font-medium text-blue-gray-600"
-                                style={{ paddingLeft: "10px" }}
-                              >
-                                {created_by}
-                              </Typography>
-                            </div>
-                          </td>
                           <td className={className}>
                             <div className="w-10/12">
                               <Typography
                                 variant="small"
                                 className="mb-1 block text-xs font-medium text-blue-gray-600"
                               >
-                                {getCompletionRate(signed_validators) * 100}%
+                                {completion * 100}%
                               </Typography>
                               <Progress
                                 value={100}
@@ -316,9 +272,8 @@ export function UserData() {
                             </Typography>
                           </td>
                           <td className={`flex-center-wrap ${className}`}>
-                            <SignComponent
-                              signed_validators={signed_validators}
-                              validator_address={validator_address}
+                            <CcipComponent
+                              sent={ccip_sent}
                             />
                           </td>
                         </tr>
