@@ -143,6 +143,7 @@ contract CCSender is CCIPReceiver {
         uint256 index = validatorIndex[validator];
         validators[index - 1].isValid = false;
         totalValidators--;
+        totalStakes -= stakes[validator];
         payable(validator).transfer(stakes[validator]);
         emit RemoveValidator(validator);
     }

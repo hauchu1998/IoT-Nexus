@@ -50,6 +50,7 @@ export function SignUp() {
       wallet_address: defaultAddress,
     };
     const response = await getKey(data);
+    localStorage.setItem("privateKey", response.private_key);
     setKey({
       publicKey: response.public_key,
       privateKey: response.private_key,
