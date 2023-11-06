@@ -11,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import db
 from app import utils
 from app.models import (
-    SignMessageRequest, GenProofRequest, GenKeyRequest, PKeys, SaveMessageRequest)
+    SignMessageRequest, GenProofRequest, GenKeyRequest, PKeys,
+    SaveMessageRequest
+)
 
 origins = [
     "http://localhost:5173",
@@ -37,27 +39,27 @@ async def listen_to_events():
     contract_address = utils.get_contract_address()
     abi = utils.get_abi()
     contract = utils.get_contract(w3, contract_address, abi)
-    event_template = contract.events.GenerateMessage
+    event_msg_gen = contract.events.GenerateMessage
+    event_ccip_sent = contract.events.MessageSent
 
     block_start = w3.eth.get_block_number()
     while True:
-        block_end = w3.eth.get_block_number()
-        events = w3.eth.get_logs({
-            'fromBlock': block_start,
-            'toBlock': block_end,
-            'address': contract_address
-        })
-        new_event = False
-        for event in events:
-            suc, res = utils.handle_event(
-                event=event,
-                event_template=event_template
+        msg_gen_logs = utils.handle_sepolia_event(event_msg_gen, block_start)
+        for log in msg_gen_logs:
+            db.save_message(
+                message=log["args"]["message"],
+                wallet_address=log["args"]["user"]
             )
-            if suc:
-                new_event = True
-                print("Event found", res)
-        # print("No new event" if not new_event else "New event found")
-        block_start = block_end + 1
+
+        ccip_sent_logs = utils.handle_sepolia_event(
+            event_ccip_sent, block_start)
+        for log in ccip_sent_logs:
+            db.update_ccip_status(
+                message=log["args"]["text"],
+                status=True
+            )
+
+        block_start += 1
         await asyncio.sleep(3)
 
 
