@@ -89,13 +89,13 @@ def get_messages():
 
 # Create validators and messages for testing
 N_VALIDATORS = 10
-N_MESSAGES = 10
+N_MESSAGES = 100
 for i in range(N_VALIDATORS):
     sk = gen_sk()
     pk = sk.get_public_key()
 
     weight = random.randint(10000, 5000000)
-    if i < 8:
+    if i < 6:
         address = "0x" + "".join([random.choice("0123456789abcdef")
                                   for _ in range(40)])
     elif i == 6:
