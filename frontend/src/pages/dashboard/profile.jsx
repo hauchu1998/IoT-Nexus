@@ -1,25 +1,12 @@
 import {
   Card,
   CardBody,
-  CardHeader,
-  CardFooter,
-  Avatar,
   Typography,
-  Tabs,
-  TabsHeader,
-  Tab,
-  Switch,
   Input,
   Tooltip,
   Button,
   Progress,
 } from "@material-tailwind/react";
-import {
-  HomeIcon,
-  ChatBubbleLeftEllipsisIcon,
-  Cog6ToothIcon,
-  PencilIcon,
-} from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
 import Blockies from "react-blockies";
 import { getMessages } from "@/restApis/getMessages";
@@ -27,29 +14,15 @@ import "@/../public/css/tailwind.css";
 import { ethers } from "ethers";
 import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
+import { getProof } from "@/restApis/getProof";
+import { useNavigate } from "react-router-dom";
+import { getCompletionRate } from "@/utils/calculate";
 
-function CcipComponent({ sent, completion }) {
-  if (!sent && completion > 0.7) {
-    return (
-      <div className="container w-[70%]">
-        <Button color="green" size="" className="w-full">
-          Send
-        </Button>
-      </div>
-    );
-  }
-}
-
-function getCompletionRate(signed_validators, total_weight) {
-  let signed_weight = 0;
-  signed_validators.map(({ weight }, key) => {
-    signed_weight += weight;
-  });
-  let rate = signed_weight / total_weight;
-  return rate.toPrecision(2);
-}
+const DESTINATION_CHAIN_SELECTOR = import.meta.env.DESTINATION_CHAIN_SELECTOR;
+const RECEIVER_ADDRESS = import.meta.env.RECEIVER_ADDRESS;
 
 export function UserData() {
+  const navigate = useNavigate();
   const [storeData, setStoreData] = useState();
   const [data, setData] = useState();
   const { senderContract } = useContract();
@@ -59,6 +32,20 @@ export function UserData() {
   const [totalWeight, setTotalWeight] = useState();
   const [messages, setMessages] = useState();
 
+  const handleSendMessageCCIP = async (message) => {
+    const proof = await getProof({
+      message,
+    });
+
+    const tx = await senderContract.sendMessageCCIP(
+      BigInt(DESTINATION_CHAIN_SELECTOR),
+      RECEIVER_ADDRESS || "",
+      message,
+      proof
+    );
+    await tx.wait();
+  };
+
   const handleGetMessages = async (totalWeight) => {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
@@ -67,12 +54,7 @@ export function UserData() {
         (message) => message.created_by.toLowerCase() === address.toLowerCase()
       )
       .map((message) => {
-        console.log(message);
         let rate = getCompletionRate(message.signed_validators, totalWeight);
-        /* TODO: remove tmp madeup number */
-        while (rate > 1) {
-          rate /= 10;
-        }
         return {
           ...message,
           completion: rate,
@@ -115,10 +97,9 @@ export function UserData() {
   };
 
   useEffect(() => {
-    if (address) {
-      // handleGetData();
-      handleGetTotalWeight();
-    }
+    if (address === undefined) return;
+    handleGetData();
+    handleGetTotalWeight();
   }, [address]);
 
   useEffect(() => {
@@ -156,8 +137,9 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${index + 1
-                    }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${
+                    index + 1
+                  }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -222,10 +204,11 @@ export function UserData() {
                         },
                         key
                       ) => {
-                        const className = `py-3 px-5 ${key === messages.length - 1
-                          ? ""
-                          : "border-b border-blue-gray-50"
-                          }`;
+                        const className = `py-3 px-5 ${
+                          key === messages.length - 1
+                            ? ""
+                            : "border-b border-blue-gray-50"
+                        }`;
 
                         return (
                           <tr key={message}>
@@ -297,7 +280,20 @@ export function UserData() {
                               </Typography>
                             </td>
                             <td className={`flex-center-wrap ${className}`}>
-                              <CcipComponent sent={ccip_sent} completion={completion} />
+                              {!ccip_sent && completion > 0.7 && (
+                                <div className="container w-[70%]">
+                                  <Button
+                                    color="green"
+                                    size=""
+                                    className="w-full"
+                                    onClick={() =>
+                                      handleSendMessageCCIP(message)
+                                    }
+                                  >
+                                    Send
+                                  </Button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
