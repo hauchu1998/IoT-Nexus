@@ -63,8 +63,11 @@ export function UserData() {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
     const enrichedMessages = rawMessages
-      .filter((message) => message.created_by == address)
+      .filter(
+        (message) => message.created_by.toLowerCase() === address.toLowerCase()
+      )
       .map((message) => {
+        console.log(message);
         const rate = getCompletionRate(message.signed_validators, totalWeight);
         return {
           ...message,
@@ -116,7 +119,8 @@ export function UserData() {
 
   useEffect(() => {
     if (address === undefined || totalWeight === undefined) return;
-    handleGetMessages();
+    console.log(address, totalWeight);
+    handleGetMessages(totalWeight);
   }, [totalWeight, address]);
 
   return (
