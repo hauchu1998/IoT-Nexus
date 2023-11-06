@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { isValidWalletAddress } from "@/utils/address";
 
-const useEtherWallet = () => {
+const useEtherWallet = (path) => {
   const [isConnect, setIsConnect] = useState(false);
   const [address, setAddress] = useState();
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -45,6 +45,12 @@ const useEtherWallet = () => {
       }
     }
   }
+
+  useEffect(() => {
+    if (path !== "sign-up" && path !== "sign-in") {
+      connectWallet();
+    }
+  }, [path]);
 
   return { isConnect, address, provider, signer, connectWallet, switchNetwork };
 };
