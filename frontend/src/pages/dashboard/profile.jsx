@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import Blockies from "react-blockies";
 import { getMessages } from "@/restApis/getMessages";
 import "@/../public/css/tailwind.css";
+import { ethers } from "ethers";
 import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
 
@@ -91,6 +92,12 @@ export function UserData() {
   const { address } = useEtherWallet("dashboard/data");
   const [isStoreLoading, setIsStoreLoading] = useState(false);
   const [isGenerateLoading, setIsGenerateLoading] = useState(false);
+  const [totalWeight, setTotalWeight] = useState();
+
+  const handleGetTotalWeight = async () => {
+    const weight = await senderContract.totalStakes();
+    setTotalWeight(Number(weight));
+  };
 
   const handleGetData = async () => {
     const data = await senderContract.getData(address);
@@ -123,6 +130,7 @@ export function UserData() {
   useEffect(() => {
     if (address) {
       handleGetData();
+      handleGetTotalWeight();
     }
   }, [address]);
 
@@ -137,13 +145,13 @@ export function UserData() {
             <div className="flex items-center gap-6">
               <Blockies
                 data-testid="avatar"
-                seed={validator_address.toLowerCase() || ""}
+                seed={address?.toLowerCase() || ""}
                 scale={7}
                 size={7}
               />
               <div>
                 <Typography variant="h6" color="blue-gray" className="mb-1">
-                  {validator_address}
+                  {address || ""}
                 </Typography>
               </div>
             </div>
