@@ -48,6 +48,10 @@ def save_message(message: str, wallet_address: str):
     )
 
 
+def update_ccip_status(message: str, status: bool):
+    messages[message].ccip_sent = status
+
+
 def save_signature(message: str, validator: Validator, signature):
     messages[message].signed_validators[validator] = Signature(
         r=[str(signature.r.x), str(signature.r.y)],
