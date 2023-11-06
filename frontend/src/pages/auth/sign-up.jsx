@@ -38,6 +38,7 @@ export function SignUp() {
   };
 
   const handleStakeChange = (e) => {
+    e.preventDefault();
     setStakeAmount(e.target.value);
   };
 
