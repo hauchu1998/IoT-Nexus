@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Typography,
   Card,
@@ -74,7 +74,16 @@ function getCompletionRate(signed_validators) {
   return rate.toPrecision(2);
 }
 export function ValidatePage() {
-  console.log(messages);
+  const [totalWeight, setTotalWeight] = useState();
+
+  const handleGetTotalWeight = async () => {
+    const weight = await senderContract.totalStakes();
+    setTotalWeight(Number(weight));
+  };
+
+  useEffect(() => {
+    handleGetTotalWeight();
+  }, [handleGetTotalWeight]);
   return (
     <div className="mt-12">
       <div className="mb-4 grid grid-cols-1 gap-6">
