@@ -1,7 +1,5 @@
 import axios from "axios";
 export const getKey = async (data) => {
-  console.log(data);
-  const res = await axios.post("/api/getKey", data);
-  console.log(res);
+  const res = await axios.post("http://localhost:8000/api/getKey", data);
   return res.data;
 };

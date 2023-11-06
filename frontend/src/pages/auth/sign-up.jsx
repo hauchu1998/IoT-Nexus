@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -13,7 +13,9 @@ import {
 import useEtherWallet from "@/hooks/useEtherWallet";
 import { mediumAddress } from "@/utils/address";
 import { getKey } from "@/restApis/getKey";
+import { AiFillCloseCircle } from "react-icons/ai";
 import useContract from "@/hooks/useContract";
+import { singUp } from "@/restApis/signUp";
 
 const SENDER_NETWORK = import.meta.env.VITE_SENDER_NETWORK;
 
@@ -21,25 +23,32 @@ export function SignUp() {
   const { address, isConnect, connectWallet, switchNetwork } = useEtherWallet();
   const { senderContract } = useContract();
   const [isLoading, setIsLoading] = useState(false);
-  const [key, setKey] = useState({
-    publicKey: "123",
-    secretKey: "132",
-  });
+  const [isValidator, setIsValidator] = useState(false);
+  const [key, setKey] = useState();
   const [stakeAmount, setStakeAmount] = useState("");
+  const [isOpenModal, setIsOpenModal] = useState(false);
+
+  const handleCloseModal = () => {
+    setIsOpenModal(false);
+    setKey();
+  };
 
   const handleStakeChange = (e) => {
     setStakeAmount(e.target.value);
   };
 
   const handleConnectWallet = async () => {
-    // const defaultAddress = await connectWallet();
-    // await switchNetwork(SENDER_NETWORK);
-    // send Post to backend
+    const defaultAddress = await connectWallet();
+    await switchNetwork(SENDER_NETWORK);
+    // // send Post to backend
     const data = {
-      wallet_address: "0xE2A794de195D92bBA0BA64e006FcC3568104245d",
+      wallet_address: defaultAddress,
     };
     const response = await getKey(data);
-    console.log(response);
+    setKey({
+      publicKey: response.public_key,
+      privateKey: response.private_key,
+    });
   };
 
   const handleSetValidator = async () => {
@@ -49,9 +58,13 @@ export function SignUp() {
       gasLimit: 1000000,
     });
 
-    const receipt = await tx.wait();
+    await tx.wait();
     const validator = await senderContract.getValidator(address);
-    console.log(validator);
+    await singUp({
+      wallet_address: address,
+      stake_amount: Number(stakeAmount),
+    });
+    setIsValidator(validator.isValid);
     setIsLoading(false);
   };
 
@@ -128,6 +141,44 @@ export function SignUp() {
             </Typography>
           </CardFooter>
         </Card>
+        {isValidator && key && (
+          <div className="fixed top-0 left-0 flex h-screen w-screen items-center justify-center ">
+            <div className="border-2 border-blue-500 bg-white p-5 text-center">
+              <div>
+                This is you public and private key. Please save it somewhere
+                safe.
+                <br />
+                <span className="font-bold text-red-500">
+                  Remember once you close this modal, you will not be able to
+                  see it again.
+                </span>
+              </div>
+              <div className="mt-5 border-t border-gray-600">
+                <div>
+                  Public Key:{" "}
+                  <span className="font-semibold text-blue-500">
+                    {key?.publicKey}
+                  </span>
+                </div>
+                <div>
+                  Private Key:{" "}
+                  <span className="font-semibold text-orange-500">
+                    {key?.privateKey}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <button
+                  className="mt-5 text-xl text-blue-500"
+                  onClick={handleCloseModal}
+                >
+                  <AiFillCloseCircle />
+                </button>
+                <div className="text-sm text-blue-500">close</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
