@@ -10,6 +10,7 @@ import {
   Button,
   Typography,
 } from "@material-tailwind/react";
+import { useNavigate } from "react-router-dom";
 import useEtherWallet from "@/hooks/useEtherWallet";
 import { mediumAddress } from "@/utils/address";
 import { getKey } from "@/restApis/getKey";
@@ -20,7 +21,9 @@ import { singUp } from "@/restApis/signUp";
 const SENDER_NETWORK = import.meta.env.VITE_SENDER_NETWORK;
 
 export function SignUp() {
-  const { address, isConnect, connectWallet, switchNetwork } = useEtherWallet();
+  const navigate = useNavigate();
+  const { address, isConnect, connectWallet, switchNetwork } =
+    useEtherWallet("sign-up");
   const { senderContract } = useContract();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidator, setIsValidator] = useState(false);
@@ -31,6 +34,7 @@ export function SignUp() {
   const handleCloseModal = () => {
     setIsOpenModal(false);
     setKey();
+    navigate("/dashboard/home");
   };
 
   const handleStakeChange = (e) => {
@@ -60,12 +64,15 @@ export function SignUp() {
 
     await tx.wait();
     const validator = await senderContract.getValidator(address);
-    await singUp({
-      wallet_address: address,
-      stake_amount: Number(stakeAmount),
-    });
-    setIsValidator(validator.isValid);
-    setIsLoading(false);
+    if (validator.isValid) {
+      await singUp({
+        wallet_address: address,
+        weight: Number(stakeAmount),
+      });
+      setIsValidator(validator.isValid);
+      setIsLoading(false);
+      setIsOpenModal(true);
+    }
   };
 
   return (

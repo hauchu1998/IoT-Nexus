@@ -9,6 +9,7 @@ import {
   Button,
   Typography,
 } from "@material-tailwind/react";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useEtherWallet from "@/hooks/useEtherWallet";
 import useContract from "@/hooks/useContract";
@@ -16,7 +17,9 @@ import useContract from "@/hooks/useContract";
 const SENDER_NETWORK = import.meta.env.VITE_SENDER_NETWORK;
 
 export function SignIn() {
-  const { address, isConnect, connectWallet, switchNetwork } = useEtherWallet();
+  const navigate = useNavigate();
+  const { address, isConnect, connectWallet, switchNetwork } =
+    useEtherWallet("sign-in");
   const { senderContract } = useContract();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidator, setIsValidator] = useState(false);
@@ -24,17 +27,24 @@ export function SignIn() {
     setIsLoading(true);
     const defaultAddress = await connectWallet();
     await switchNetwork(SENDER_NETWORK);
+    setIsLoading(false);
   };
 
   const handleCheckValidator = async () => {
+    setIsLoading(true);
     const validator = await senderContract.getValidator(address);
     console.log(validator);
     setIsValidator(validator.isValid);
     setIsLoading(false);
+    if (validator.isValid) {
+      navigate("/dashboard/home");
+    }
   };
 
   useEffect(() => {
-    handleCheckValidator();
+    if (address) {
+      handleCheckValidator();
+    }
   }, [address]);
   return (
     <>

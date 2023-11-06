@@ -46,16 +46,16 @@ function SignComponent({ signed_validators, validator_address }) {
   });
   if (!signed) {
     return (
-      <div className="container">
-        <Button color="green" size="">
+      <div className="container w-[70%]">
+        <Button color="green" size="" className="w-full">
           Approve
-        </Button>{" "}
+        </Button>
       </div>
     );
   } else {
     return (
-      <div>
-        <Button disabled color="light-green">
+      <div className="container w-[70%]">
+        <Button disabled color="light-green" className="w-full">
           Signed
         </Button>
       </div>
