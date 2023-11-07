@@ -15,12 +15,13 @@ import "@/../public/css/tailwind.css";
 import { ethers } from "ethers";
 import useContract from "@/hooks/useContract";
 import useEtherWallet from "@/hooks/useEtherWallet";
-import { getProof } from "@/restApis/getProof";
+import { genProof } from "@/restApis/genProof";
 import { useNavigate } from "react-router-dom";
 import { getCompletionRate } from "@/utils/calculate";
 
-const DESTINATION_CHAIN_SELECTOR = import.meta.env.DESTINATION_CHAIN_SELECTOR;
-const RECEIVER_ADDRESS = import.meta.env.RECEIVER_ADDRESS;
+const DESTINATION_CHAIN_SELECTOR = import.meta.env
+  .VITE_DESTINATION_CHAIN_SELECTOR;
+const RECEIVER_ADDRESS = import.meta.env.VITE_RECEIVER_ADDRESS;
 
 export function UserData() {
   const navigate = useNavigate();
@@ -34,9 +35,10 @@ export function UserData() {
   const [messages, setMessages] = useState();
 
   const handleSendMessageCCIP = async (message) => {
-    const proof = await getProof({
+    const proof = await genProof({
       message,
     });
+    console.log(proof);
 
     const tx = await senderContract.sendMessageCCIP(
       BigInt(DESTINATION_CHAIN_SELECTOR),
@@ -151,8 +153,9 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${index + 1
-                    }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${
+                    index + 1
+                  }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -185,7 +188,7 @@ export function UserData() {
                   <tr>
                     {[
                       "messages",
-                      "members",
+                      "signers",
                       "completion",
                       "create at",
                       "left",
@@ -219,10 +222,11 @@ export function UserData() {
                         },
                         key
                       ) => {
-                        const className = `py-3 px-5 ${key === messages.length - 1
+                        const className = `py-3 px-5 ${
+                          key === messages.length - 1
                             ? ""
                             : "border-b border-blue-gray-50"
-                          }`;
+                        }`;
 
                         return (
                           <tr key={message}>
