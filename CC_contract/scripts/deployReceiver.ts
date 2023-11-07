@@ -2,7 +2,6 @@ import { ethers } from "hardhat";
 import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-// Sepolia: 0x5d5aB6CA654835C0Cf11f230EB3Bfb44f6ffdF7B
 async function main() {
   let cc: Contract;
   let owner: SignerWithAddress;

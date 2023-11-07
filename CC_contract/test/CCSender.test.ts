@@ -66,6 +66,7 @@ describe("CompactCertificateSender", function () {
     });
 
     it("summarize multiple data", async function () {
+      await compactCertificateSender.storeData("Hello");
       await compactCertificateSender.storeData("World");
       await compactCertificateSender.generateMessage();
       const messageHash = await compactCertificateSender.getMessage(
@@ -141,7 +142,7 @@ describe("CompactCertificateSender", function () {
         2
       );
       const receipt = await tx.wait();
-      console.log(receipt);
+      // console.log(receipt);
 
       const decision = await compactCertificateSender.messageSigned(
         owner.address,
@@ -163,7 +164,7 @@ describe("CompactCertificateSender", function () {
         .connect(addr1)
         .signMessage(messageHash, signature2, 2);
       const receipt = await tx.wait();
-      console.log(receipt);
+      // console.log(receipt);
 
       const decision = await compactCertificateSender.messageSigned(
         addr1.address,
@@ -192,7 +193,7 @@ describe("CompactCertificateSender", function () {
         proof
       );
       const receipt = await tx.wait();
-      console.log(receipt);
+      // console.log(receipt);
     });
   });
 });

@@ -55,6 +55,7 @@ contract CCSender is CCIPReceiver {
     }
 
     address public owner;
+    uint256 public threshold;
     uint256 public totalValidators;
     uint256 public totalStakes;
     uint public stakeAmount;
@@ -102,9 +103,15 @@ contract CCSender is CCIPReceiver {
     constructor(address _router, uint256 _amount) CCIPReceiver(_router) {
         owner = msg.sender;
         stakeAmount = _amount;
+        threshold = 70;
     }
 
     receive() external payable {}
+
+    function setThreshold(uint256 _threshold) external onlyOwner {
+        require(_threshold <= 100, "Threshold must be less than 100");
+        threshold = _threshold;
+    }
 
     function setStakeAmount(uint256 amount) external onlyOwner {
         stakeAmount = amount;
@@ -127,16 +134,15 @@ contract CCSender is CCIPReceiver {
         } else {
             validators.push(Validator(msg.sender, eddsaPublicKey, true));
             validatorIndex[validator] = validators.length;
+            totalValidators++;
         }
-        stakes[validator] = msg.value;
-        totalValidators++;
+        stakes[validator] += msg.value;
         totalStakes += msg.value;
         emit SetValidator(validator, eddsaPublicKey);
     }
 
     function removeValidator(address validator) external onlyValidator {
         _removeValidator(validator);
-        // _withdrawStake();
     }
 
     function _removeValidator(address validator) internal {
@@ -225,7 +231,7 @@ contract CCSender is CCIPReceiver {
         );
         messageSigned[msg.sender][_message] = decision;
         if (decision == SignMessage.signed) {
-            messageWeight[_message] += 1;
+            messageWeight[_message] += stakes[msg.sender];
         }
         emit CreateSignature(msg.sender, _message, signature, decision);
     }
@@ -284,7 +290,7 @@ contract CCSender is CCIPReceiver {
         )
     {
         require(
-            messageWeight[_message] > totalValidators / 2,
+            messageWeight[_message] > (totalStakes * threshold) / 100,
             "proven weight is not enough"
         );
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
