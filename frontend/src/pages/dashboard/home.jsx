@@ -57,7 +57,7 @@ export function ValidatePage() {
 
   const handleSignMessage = async (message) => {
     if (address === undefined) return;
-    const res = await signMessage(message, address);
+    const res = await signMessage({ message, wallet_address: address });
     const tx = await senderContract.signMessage(
       message,
       `${address} sign it`,
@@ -160,16 +160,16 @@ export function ValidatePage() {
                         completion,
                         left,
                       },
-                      key
+                      index
                     ) => {
                       const className = `py-3 px-5 ${
-                        key === messages.length - 1
+                        index === messages.length - 1
                           ? ""
                           : "border-b border-blue-gray-50"
                       }`;
 
                       return (
-                        <tr key={message}>
+                        <tr key={message + index}>
                           <td className={className}>
                             <div className="flex items-center gap-4">
                               {/* <Avatar src={img} alt={message} size="sm" /> */}
@@ -184,14 +184,14 @@ export function ValidatePage() {
                           </td>
                           <td className={`${className}`}>
                             <div className="members-container">
-                              {signed_validators.map(({ validatorAddress }) => (
+                              {signed_validators.map(({ wallet_address }) => (
                                 <Tooltip
-                                  key={validatorAddress}
-                                  content={validatorAddress}
+                                  key={wallet_address}
+                                  content={wallet_address}
                                 >
                                   <Blockies
                                     data-testid="avatar"
-                                    seed={validatorAddress?.toLowerCase() || ""}
+                                    seed={wallet_address?.toLowerCase() || ""}
                                     scale={5}
                                     size={3}
                                     className="rounded-full"
