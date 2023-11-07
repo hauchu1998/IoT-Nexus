@@ -38,10 +38,15 @@ export function ValidatePage() {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
     const enrichedMessages = rawMessages.map((message) => {
-      let rate = getCompletionRate(message.signed_validators, totalWeight);
+      const rate = getCompletionRate(message.signed_validators, totalWeight);
+      const currentDate = new Date();
+      const createdAt = new Date(message.created_at);
+      const diff = currentDate.getTime() - createdAt.getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       return {
         ...message,
         completion: rate,
+        left: 7 - days > 0 ? 7 - days : 0,
       };
     });
     setMessages(enrichedMessages);
@@ -113,6 +118,7 @@ export function ValidatePage() {
                     "company",
                     "completion",
                     "create at",
+                    "left",
                     "decision",
                   ].map((el) => (
                     <th
@@ -139,6 +145,7 @@ export function ValidatePage() {
                         created_by,
                         created_at,
                         completion,
+                        left,
                       },
                       key
                     ) => {
@@ -220,6 +227,14 @@ export function ValidatePage() {
                               className="text-xs font-medium text-blue-gray-600"
                             >
                               {created_at}
+                            </Typography>
+                          </td>
+                          <td className={className}>
+                            <Typography
+                              variant="small"
+                              className="text-xs font-medium text-blue-gray-600"
+                            >
+                              {left} days left
                             </Typography>
                           </td>
                           <td className={`flex-center-wrap ${className}`}>

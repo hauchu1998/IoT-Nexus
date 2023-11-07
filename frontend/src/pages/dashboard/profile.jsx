@@ -54,10 +54,15 @@ export function UserData() {
         (message) => message.created_by.toLowerCase() === address.toLowerCase()
       )
       .map((message) => {
-        let rate = getCompletionRate(message.signed_validators, totalWeight);
+        const rate = getCompletionRate(message.signed_validators, totalWeight);
+        const currentDate = new Date();
+        const createdAt = new Date(message.created_at);
+        const diff = currentDate.getTime() - createdAt.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         return {
           ...message,
           completion: rate,
+          left: 7 - days > 0 ? 7 - days : 0,
         };
       });
     setMessages(enrichedMessages);
@@ -175,6 +180,7 @@ export function UserData() {
                       "members",
                       "completion",
                       "create at",
+                      "left",
                       "ccip",
                     ].map((el) => (
                       <th
@@ -201,6 +207,7 @@ export function UserData() {
                           created_at,
                           ccip_sent,
                           completion,
+                          left,
                         },
                         key
                       ) => {
@@ -279,8 +286,16 @@ export function UserData() {
                                 {created_at}
                               </Typography>
                             </td>
+                            <td className={className}>
+                              <Typography
+                                variant="small"
+                                className="text-xs font-medium text-blue-gray-600"
+                              >
+                                {left} days left
+                              </Typography>
+                            </td>
                             <td className={`flex-center-wrap ${className}`}>
-                              {!ccip_sent && completion > 0.7 && (
+                              {!ccip_sent && completion > 0.7 && left >= 0 && (
                                 <div className="container w-full">
                                   <Button
                                     color="green"
