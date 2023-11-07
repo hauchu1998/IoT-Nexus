@@ -118,10 +118,11 @@ async def genproof(request: GenProofRequest):
 @app.post("/api/signMessage")
 async def sign_message(request: SignMessageRequest):
     attestor = db.get_attestor(request.wallet_address)
+    validator = db.get_validators(request.wallet_address)
 
     message = request.message
     signature = utils.sign_message(message, attestor)
-    db.save_signature(message, signature)
+    db.save_signature(message, validator, signature)
     return Response(status_code=200)
 
 
