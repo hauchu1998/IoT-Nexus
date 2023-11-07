@@ -21,6 +21,7 @@ import { getCompletionRate } from "@/utils/calculate";
 import useEtherWallet from "@/hooks/useEtherWallet";
 import { useNavigate } from "react-router-dom";
 import useContract from "@/hooks/useContract";
+import { signMessage } from "@/restApis/signMessage";
 
 export function ValidatePage() {
   const navigate = useNavigate();
@@ -53,7 +54,14 @@ export function ValidatePage() {
   };
 
   const handleSignMessage = async (message) => {
-    const privateKey = localStorage.getItem("privateKey");
+    if (address === undefined) return;
+    const res = await signMessage(message, address);
+    const tx = await senderContract.signMessage(
+      message,
+      `${address} sign it`,
+      2
+    );
+    tx = await tx.wait();
   };
 
   useEffect(() => {
@@ -258,6 +266,7 @@ export function ValidatePage() {
                                   color="green"
                                   size="md"
                                   className="w-full"
+                                  onClick={() => handleSignMessage(message)}
                                 >
                                   Approve
                                 </Button>
