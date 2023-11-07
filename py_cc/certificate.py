@@ -47,6 +47,9 @@ class Attestor:
     def __str__(self):
         return f"{self.__private_key},{self.public_key},{self.weight}"
 
+    def __hash__(self) -> int:
+        return hash(f"{self.__private_key},{self.public_key},{self.weight}")
+
 
 class Certificate:
     def __init__(
@@ -127,7 +130,6 @@ class Certificate:
 
         with open("certificate.json", "w") as file:
             json.dump(digital_certificate, file, indent=4)
-        file.close()
 
         return digital_certificate
 
@@ -248,9 +250,9 @@ class CompactCertificate:
         self.message = message
         self.hash = hash
         self.curve = curve
-        self.attesters = [None] * attesters
+        self.attestors = [None] * attesters
         self.attester_tree = None
-        self.signatures = [None] * len(self.attesters)
+        self.signatures = [None] * len(self.attestors)
         self.signers = {}  # key: index in attesters, value: signature
         self.sigs_tree = None
         self.signed_weight = 0
@@ -263,24 +265,37 @@ class CompactCertificate:
         pk = sk.get_public_key()
         return (sk, pk)
 
-    def setAttestors(self):
+    def setAttestors(self, attestors=None):
         """
         1. Create testing attestors with random private key, public key, and weight
         2. Calculating the total weight, proven weight(51% of total weight)
         """
         total_weight = 0
-        for i in range(len(self.attesters)):
-            sk = PrivateKey(self.curve)
-            pk = sk.get_public_key()
-            weight = SystemRandom().randrange(1, 1000)
-            total_weight += weight
+        if attestors is None:
+            for i in range(len(self.attestors)):
+                sk = PrivateKey(self.curve)
+                pk = sk.get_public_key()
+                weight = SystemRandom().randrange(1, 1000)
+                total_weight += weight
 
-            self.attesters[i] = Attestor(sk, pk, weight)
+                attestors[i] = Attestor(sk, pk, weight)
 
-        self.attesters = sorted(
-            self.attesters, key=lambda x: x.weight, reverse=True)
+        self.attestors = sorted(
+            attestors, key=lambda x: x.weight, reverse=True)
         self.total_weight = total_weight
         self.proven_weight = round(0.51 * total_weight)
+
+    def setSignatures(self, signed_attestors):
+        L = 0
+        for i, attestor in enumerate(self.attestors):
+            if attestor in signed_attestors:
+                R = L + attestor.weight
+                self.signatures[i] = (signed_attestors[attestor], L, R)
+            else:
+                R = L
+                self.signatures[i] = ("", L, R)
+            L = R
+        print("ok")
 
     def setAttestorsFromFile(self, filename="attesters.txt"):
         """
@@ -291,7 +306,7 @@ class CompactCertificate:
         total_weight = 0
         with open(filename, "r") as file:
             for idx, attester in enumerate(file):
-                if idx == len(self.attesters):
+                if idx == len(self.attestors):
                     break
                 attester = attester.split(",")
                 sk = PrivateKey(self.curve, toDigit(attester[0]))
@@ -300,12 +315,12 @@ class CompactCertificate:
                 pk = PublicKey(self.curve, pk)
                 print(sk, pk)
                 weight = int(attester[3])
-                self.attesters[idx] = Attestor(sk, pk, weight)
+                self.attestors[idx] = Attestor(sk, pk, weight)
 
                 total_weight += weight
 
-        self.attesters = sorted(
-            self.attesters, key=lambda x: x.weight, reverse=True)
+        self.attestors = sorted(
+            self.attestors, key=lambda x: x.weight, reverse=True)
         self.total_weight = total_weight
         self.proven_weight = round(0.51 * total_weight)
         # print("setAttestorsFromFile took: ", time.time() - start)
@@ -319,25 +334,25 @@ class CompactCertificate:
         """
         start = time.time()
         while self.signed_weight < self.proven_weight or len(self.signers) < 2:
-            i = SystemRandom().randrange(0, len(self.attesters))
+            i = SystemRandom().randrange(0, len(self.attestors))
             if i in self.signers:
                 continue
-            sk = self.attesters[i].getPrivateKey()
+            sk = self.attestors[i].getPrivateKey()
             signature = Eddsa.sign(
-                self.message, sk, self.attesters[i].public_key, hash_fn=self.hash.run
+                self.message, sk, self.attestors[i].public_key, hash_fn=self.hash.run
             )
 
             if not Eddsa.verify(
                 self.message,
                 signature,
-                self.attesters[i].public_key,
+                self.attestors[i].public_key,
                 hash_fn=self.hash.run,
             ):
                 print("Signature is not valid")
                 continue
 
             self.signers[i] = signature
-            self.signed_weight += self.attesters[i].weight
+            self.signed_weight += self.attestors[i].weight
 
         assert (
             len(self.signers) > 1
@@ -349,7 +364,7 @@ class CompactCertificate:
         for i in range(len(self.signatures)):
             if i in self.signers:
                 # signature, left_value, right_value to self.signatures
-                R = L + self.attesters[i].weight
+                R = L + self.attestors[i].weight
                 sig = self.signers[i]
                 self.signatures[i] = (sig, L, R)
             else:
@@ -363,7 +378,7 @@ class CompactCertificate:
         Create merkle tree including attestors public keys
         """
         # pks = [attester.public_key.toString() for attester in self.attesters]
-        pks = [attester.public_key.toString() for attester in self.attesters]
+        pks = [attester.public_key.toString() for attester in self.attestors]
         self.attester_tree = MerkleTree(pks, hash_fn=self.hash.run)
 
     def buildSignTree(self):
@@ -412,7 +427,7 @@ class CompactCertificate:
                     (self.signatures[idx][0], self.signatures[idx][1]),
                     self.sigs_tree.get_proof(idx),  # merkle proof of signature
                     # TODO this shouldn't include private key
-                    self.attesters[idx],
+                    self.attestors[idx],
                     self.attester_tree.get_proof(
                         idx
                     ),  # merkle proof of attester?? not sure is all attestors or just the one that signed, refer p5 step 6
