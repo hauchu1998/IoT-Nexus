@@ -44,11 +44,14 @@ export function UserData() {
       proof
     );
     await tx.wait();
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
   };
 
-  const handleGetMessages = async (totalWeight) => {
+  const handleGetMessages = async () => {
     const rawMessages = await getMessages();
-    if (rawMessages === undefined) return;
+    if (rawMessages === undefined || totalWeight) return;
     const enrichedMessages = rawMessages
       .filter(
         (message) => message.created_by.toLowerCase() === address.toLowerCase()
@@ -91,6 +94,11 @@ export function UserData() {
     setIsGenerateLoading(true);
     const tx = await senderContract.generateMessage();
     await tx.wait();
+
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
+
     setData("");
     setStoreData();
     setIsGenerateLoading(false);
@@ -109,8 +117,7 @@ export function UserData() {
 
   useEffect(() => {
     if (address === undefined || totalWeight === undefined) return;
-    console.log(address, totalWeight);
-    handleGetMessages(totalWeight);
+    handleGetMessages();
   }, [totalWeight, address]);
 
   return (

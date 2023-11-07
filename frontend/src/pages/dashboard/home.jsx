@@ -35,7 +35,7 @@ export function ValidatePage() {
     setTotalWeight(Number(weight));
   };
 
-  const handleGetMessages = async (totalWeight) => {
+  const handleGetMessages = async () => {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
     const enrichedMessages = rawMessages.map((message) => {
@@ -62,6 +62,9 @@ export function ValidatePage() {
       2
     );
     await tx.wait();
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
   };
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export function ValidatePage() {
 
   useEffect(() => {
     if (address === undefined || totalWeight === undefined) return;
-    handleGetMessages(totalWeight);
+    handleGetMessages();
   }, [totalWeight, address]);
 
   return (
