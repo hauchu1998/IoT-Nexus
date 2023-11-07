@@ -57,10 +57,12 @@ async def listen_to_events():
         ccip_sent_logs = utils.handle_sepolia_event(
             event_ccip_sent, last_block_ccip_sent)
         for log in ccip_sent_logs:
-            print("new ccip request", log["args"]["message"])
+            print(log)
+            print("new ccip request", log["args"]["text"])
+            print("transactionHash", "0x"+log["args"]["messageId"].hex())
             db.update_ccip_url(
                 message=log["args"]["text"],
-                transactionHash=log["transactionHash"].hex()
+                transactionHash="0x"+log["args"]["messageId"].hex()
             )
             last_block_ccip_sent = log["blockNumber"] + 1
         await asyncio.sleep(3)
