@@ -67,7 +67,8 @@ export function UserData() {
           completion: rate,
           left: 7 - days > 0 ? 7 - days : 0,
         };
-      });
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setMessages(enrichedMessages);
   };
 

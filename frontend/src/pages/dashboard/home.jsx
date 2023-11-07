@@ -38,18 +38,20 @@ export function ValidatePage() {
   const handleGetMessages = async () => {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
-    const enrichedMessages = rawMessages.map((message) => {
-      const rate = getCompletionRate(message.signed_validators, totalWeight);
-      const currentDate = new Date();
-      const createdAt = new Date(message.created_at);
-      const diff = currentDate.getTime() - createdAt.getTime();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      return {
-        ...message,
-        completion: rate,
-        left: 7 - days > 0 ? 7 - days : 0,
-      };
-    });
+    const enrichedMessages = rawMessages
+      .map((message) => {
+        const rate = getCompletionRate(message.signed_validators, totalWeight);
+        const currentDate = new Date();
+        const createdAt = new Date(message.created_at);
+        const diff = currentDate.getTime() - createdAt.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        return {
+          ...message,
+          completion: rate,
+          left: 7 - days > 0 ? 7 - days : 0,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setMessages(enrichedMessages);
   };
 
