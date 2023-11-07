@@ -162,11 +162,10 @@ export function ValidatePage() {
                       },
                       index
                     ) => {
-                      const className = `py-3 px-5 ${
-                        index === messages.length - 1
+                      const className = `py-3 px-5 ${index === messages.length - 1
                           ? ""
                           : "border-b border-blue-gray-50"
-                      }`;
+                        }`;
 
                       return (
                         <tr key={message + index}>
@@ -229,7 +228,7 @@ export function ValidatePage() {
                               <Progress
                                 value={100}
                                 variant="gradient"
-                                color={99 === 100 ? "green" : "blue"}
+                                color={completion > 0.7 ? "green" : "blue"}
                                 className="h-1"
                               />
                             </div>

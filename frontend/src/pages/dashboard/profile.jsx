@@ -151,9 +151,8 @@ export function UserData() {
               </Typography>
               {storeData &&
                 storeData.map((el, index) => (
-                  <div key={el + index} className="mt-2">{`${
-                    index + 1
-                  }. ${el}`}</div>
+                  <div key={el + index} className="mt-2">{`${index + 1
+                    }. ${el}`}</div>
                 ))}
               <div className="mt-2 flex items-center gap-3">
                 <Input
@@ -220,11 +219,10 @@ export function UserData() {
                         },
                         key
                       ) => {
-                        const className = `py-3 px-5 ${
-                          key === messages.length - 1
+                        const className = `py-3 px-5 ${key === messages.length - 1
                             ? ""
                             : "border-b border-blue-gray-50"
-                        }`;
+                          }`;
 
                         return (
                           <tr key={message}>
@@ -282,7 +280,7 @@ export function UserData() {
                                 <Progress
                                   value={100}
                                   variant="gradient"
-                                  color={99 === 100 ? "green" : "blue"}
+                                  color={completion > 0.7 ? "green" : "blue"}
                                   className="h-1"
                                 />
                               </div>
