@@ -1,6 +1,6 @@
 import axios from "axios";
-export const getProof = async (data) => {
-  const res = await axios.post("http://localhost:8000/api/getProof", data, {
+export const genProof = async (data) => {
+  const res = await axios.post("http://localhost:8000/api/genProof", data, {
     headers: {
       "Content-Type": "application/json",
     },

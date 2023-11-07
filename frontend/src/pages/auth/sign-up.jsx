@@ -59,29 +59,23 @@ export function SignUp() {
 
   const handleSetValidator = async () => {
     setIsLoading(true);
-    // const tx = await senderContract.setValidator(address, key.publicKey, {
-    //   value: Number(stakeAmount),
-    //   gasLimit: 1000000,
-    // });
-
-    // await tx.wait();
-    // const validator = await senderContract.getValidator(address);
-    // if (validator.isValid) {
-    //   await singUp({
-    //     wallet_address: address,
-    //     weight: Number(stakeAmount),
-    //   });
-    //   setIsValidator(validator.isValid);
-    //   setIsLoading(false);
-    //   setIsOpenModal(true);
-    // }
-    await singUp({
-      wallet_address: address,
-      weight: Number(stakeAmount),
+    const tx = await senderContract.setValidator(address, key.publicKey, {
+      value: Number(stakeAmount),
+      gasLimit: 1000000,
     });
-    // setIsValidator(validator.isValid);
+
+    await tx.wait();
+    const validator = await senderContract.getValidator(address);
+    const stake = await senderContract.stakes(address);
+    if (validator.isValid) {
+      await singUp({
+        wallet_address: address,
+        weight: Number(stake),
+      });
+      setIsValidator(validator.isValid);
+      setIsOpenModal(true);
+    }
     setIsLoading(false);
-    setIsOpenModal(true);
   };
 
   return (

@@ -127,7 +127,7 @@ export function ValidatePage() {
                 <tr>
                   {[
                     "messages",
-                    "members",
+                    "signers",
                     "company",
                     "completion",
                     "create at",
@@ -162,10 +162,11 @@ export function ValidatePage() {
                       },
                       index
                     ) => {
-                      const className = `py-3 px-5 ${index === messages.length - 1
+                      const className = `py-3 px-5 ${
+                        index === messages.length - 1
                           ? ""
                           : "border-b border-blue-gray-50"
-                        }`;
+                      }`;
 
                       return (
                         <tr key={message + index}>
