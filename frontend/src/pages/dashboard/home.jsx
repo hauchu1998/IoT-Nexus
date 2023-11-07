@@ -61,7 +61,7 @@ export function ValidatePage() {
       `${address} sign it`,
       2
     );
-    tx = await tx.wait();
+    await tx.wait();
   };
 
   useEffect(() => {
