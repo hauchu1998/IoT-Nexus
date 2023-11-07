@@ -21,6 +21,7 @@ import { getCompletionRate } from "@/utils/calculate";
 import useEtherWallet from "@/hooks/useEtherWallet";
 import { useNavigate } from "react-router-dom";
 import useContract from "@/hooks/useContract";
+import { signMessage } from "@/restApis/signMessage";
 
 export function ValidatePage() {
   const navigate = useNavigate();
@@ -34,21 +35,38 @@ export function ValidatePage() {
     setTotalWeight(Number(weight));
   };
 
-  const handleGetMessages = async (totalWeight) => {
+  const handleGetMessages = async () => {
     const rawMessages = await getMessages();
     if (rawMessages === undefined) return;
-    const enrichedMessages = rawMessages.map((message) => {
-      let rate = getCompletionRate(message.signed_validators, totalWeight);
-      return {
-        ...message,
-        completion: rate,
-      };
-    });
+    const enrichedMessages = rawMessages
+      .map((message) => {
+        const rate = getCompletionRate(message.signed_validators, totalWeight);
+        const currentDate = new Date();
+        const createdAt = new Date(message.created_at);
+        const diff = currentDate.getTime() - createdAt.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        return {
+          ...message,
+          completion: rate,
+          left: 7 - days > 0 ? 7 - days : 0,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setMessages(enrichedMessages);
   };
 
   const handleSignMessage = async (message) => {
-    const privateKey = localStorage.getItem("privateKey");
+    if (address === undefined) return;
+    const res = await signMessage({ message, wallet_address: address });
+    const tx = await senderContract.signMessage(
+      message,
+      `${address} sign it`,
+      2
+    );
+    await tx.wait();
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
   };
 
   useEffect(() => {
@@ -62,7 +80,7 @@ export function ValidatePage() {
 
   useEffect(() => {
     if (address === undefined || totalWeight === undefined) return;
-    handleGetMessages(totalWeight);
+    handleGetMessages();
   }, [totalWeight, address]);
 
   return (
@@ -113,6 +131,7 @@ export function ValidatePage() {
                     "company",
                     "completion",
                     "create at",
+                    "left",
                     "decision",
                   ].map((el) => (
                     <th
@@ -139,17 +158,18 @@ export function ValidatePage() {
                         created_by,
                         created_at,
                         completion,
+                        left,
                       },
-                      key
+                      index
                     ) => {
                       const className = `py-3 px-5 ${
-                        key === messages.length - 1
+                        index === messages.length - 1
                           ? ""
                           : "border-b border-blue-gray-50"
                       }`;
 
                       return (
-                        <tr key={message}>
+                        <tr key={message + index}>
                           <td className={className}>
                             <div className="flex items-center gap-4">
                               {/* <Avatar src={img} alt={message} size="sm" /> */}
@@ -164,14 +184,14 @@ export function ValidatePage() {
                           </td>
                           <td className={`${className}`}>
                             <div className="members-container">
-                              {signed_validators.map(({ validatorAddress }) => (
+                              {signed_validators.map(({ wallet_address }) => (
                                 <Tooltip
-                                  key={validatorAddress}
-                                  content={validatorAddress}
+                                  key={wallet_address}
+                                  content={wallet_address}
                                 >
                                   <Blockies
                                     data-testid="avatar"
-                                    seed={validatorAddress?.toLowerCase() || ""}
+                                    seed={wallet_address?.toLowerCase() || ""}
                                     scale={5}
                                     size={3}
                                     className="rounded-full"
@@ -222,12 +242,20 @@ export function ValidatePage() {
                               {created_at}
                             </Typography>
                           </td>
+                          <td className={className}>
+                            <Typography
+                              variant="small"
+                              className="text-xs font-medium text-blue-gray-600"
+                            >
+                              {left} days left
+                            </Typography>
+                          </td>
                           <td className={`flex-center-wrap ${className}`}>
                             {signed_validators.find(
                               (validator) =>
                                 validator.wallet_address === address
                             ) ? (
-                              <div className="container w-[70%]">
+                              <div className="container w-full">
                                 <Button
                                   disabled
                                   color="light-green"
@@ -238,11 +266,12 @@ export function ValidatePage() {
                                 </Button>
                               </div>
                             ) : (
-                              <div className="container w-[70%]">
+                              <div className="container w-full">
                                 <Button
                                   color="green"
                                   size="md"
                                   className="w-full"
+                                  onClick={() => handleSignMessage(message)}
                                 >
                                   Approve
                                 </Button>

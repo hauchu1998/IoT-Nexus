@@ -44,22 +44,31 @@ export function UserData() {
       proof
     );
     await tx.wait();
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
   };
 
-  const handleGetMessages = async (totalWeight) => {
+  const handleGetMessages = async () => {
     const rawMessages = await getMessages();
-    if (rawMessages === undefined) return;
+    if (rawMessages === undefined || totalWeight) return;
     const enrichedMessages = rawMessages
       .filter(
         (message) => message.created_by.toLowerCase() === address.toLowerCase()
       )
       .map((message) => {
-        let rate = getCompletionRate(message.signed_validators, totalWeight);
+        const rate = getCompletionRate(message.signed_validators, totalWeight);
+        const currentDate = new Date();
+        const createdAt = new Date(message.created_at);
+        const diff = currentDate.getTime() - createdAt.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         return {
           ...message,
           completion: rate,
+          left: 7 - days > 0 ? 7 - days : 0,
         };
-      });
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setMessages(enrichedMessages);
   };
 
@@ -86,6 +95,11 @@ export function UserData() {
     setIsGenerateLoading(true);
     const tx = await senderContract.generateMessage();
     await tx.wait();
+
+    if (totalWeight !== undefined) {
+      await handleGetMessages();
+    }
+
     setData("");
     setStoreData();
     setIsGenerateLoading(false);
@@ -104,8 +118,7 @@ export function UserData() {
 
   useEffect(() => {
     if (address === undefined || totalWeight === undefined) return;
-    console.log(address, totalWeight);
-    handleGetMessages(totalWeight);
+    handleGetMessages();
   }, [totalWeight, address]);
 
   return (
@@ -175,6 +188,7 @@ export function UserData() {
                       "members",
                       "completion",
                       "create at",
+                      "left",
                       "ccip",
                     ].map((el) => (
                       <th
@@ -201,6 +215,7 @@ export function UserData() {
                           created_at,
                           ccip_sent,
                           completion,
+                          left,
                         },
                         key
                       ) => {
@@ -279,12 +294,20 @@ export function UserData() {
                                 {created_at}
                               </Typography>
                             </td>
+                            <td className={className}>
+                              <Typography
+                                variant="small"
+                                className="text-xs font-medium text-blue-gray-600"
+                              >
+                                {left} days left
+                              </Typography>
+                            </td>
                             <td className={`flex-center-wrap ${className}`}>
-                              {!ccip_sent && completion > 0.7 && (
-                                <div className="container w-[70%]">
+                              {!ccip_sent && completion > 0.7 && left >= 0 && (
+                                <div className="container w-full">
                                   <Button
                                     color="green"
-                                    size=""
+                                    size="md"
                                     className="w-full"
                                     onClick={() =>
                                       handleSendMessageCCIP(message)

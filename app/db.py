@@ -80,8 +80,8 @@ def save_validator_and_attestor(sk: PrivateKey, weight, wallet_address):
     validators[wallet_address] = validator
 
     attestors[wallet_address] = Attestor(
-        public_key=validator.public_key,
-        private_key=validator.private_key,
+        public_key=sk.get_public_key(),
+        private_key=sk,
         weight=weight
     )
     return validator
