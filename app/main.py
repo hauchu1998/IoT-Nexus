@@ -54,9 +54,9 @@ async def listen_to_events():
         ccip_sent_logs = utils.handle_sepolia_event(
             event_ccip_sent, block_start)
         for log in ccip_sent_logs:
-            db.update_ccip_status(
+            db.update_ccip_url(
                 message=log["args"]["text"],
-                status=True
+                transactionHash=log["transactionHash"].hex()
             )
 
         block_start += 1

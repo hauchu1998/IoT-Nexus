@@ -7,6 +7,7 @@ import {
   Button,
   Progress,
 } from "@material-tailwind/react";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Blockies from "react-blockies";
 import { getMessages } from "@/restApis/getMessages";
@@ -51,7 +52,7 @@ export function UserData() {
 
   const handleGetMessages = async () => {
     const rawMessages = await getMessages();
-    if (rawMessages === undefined || totalWeight) return;
+    if (rawMessages === undefined || totalWeight === undefined) return;
     const enrichedMessages = rawMessages
       .filter(
         (message) => message.created_by.toLowerCase() === address.toLowerCase()
@@ -213,7 +214,7 @@ export function UserData() {
                           message,
                           signed_validators,
                           created_at,
-                          ccip_sent,
+                          ccip_url,
                           completion,
                           left,
                         },
@@ -303,7 +304,22 @@ export function UserData() {
                               </Typography>
                             </td>
                             <td className={`flex-center-wrap ${className}`}>
-                              {!ccip_sent && completion > 0.7 && left >= 0 && (
+                              {ccip_url ? (
+                                <div className="container w-full">
+                                  <a
+                                    href={`https://ccip.chain.link/msg/${ccip_url}`}
+                                    target="_blank"
+                                  >
+                                    <Button
+                                      color="blue"
+                                      size="md"
+                                      className="w-full"
+                                    >
+                                      Explorer
+                                    </Button>
+                                  </a>
+                                </div>
+                              ) : completion > 0.7 && left >= 0 ? (
                                 <div className="container w-full">
                                   <Button
                                     color="green"
@@ -316,6 +332,8 @@ export function UserData() {
                                     Send
                                   </Button>
                                 </div>
+                              ) : (
+                                <div></div>
                               )}
                             </td>
                           </tr>

@@ -48,8 +48,8 @@ def save_message(message: str, wallet_address: str):
     )
 
 
-def update_ccip_status(message: str, status: bool):
-    messages[message].ccip_sent = status
+def update_ccip_url(message: str, transactionHash: str):
+    messages[message].ccip_url = transactionHash
 
 
 def save_signature(message: str, validator: Validator, signature):
