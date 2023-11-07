@@ -42,24 +42,27 @@ async def listen_to_events():
     event_msg_gen = contract.events.GenerateMessage
     event_ccip_sent = contract.events.MessageSent
 
-    block_start = w3.eth.get_block_number()
+    last_block_msg_gen = last_block_ccip_sent = w3.eth.get_block_number()
     while True:
-        msg_gen_logs = utils.handle_sepolia_event(event_msg_gen, block_start)
+        msg_gen_logs = utils.handle_sepolia_event(
+            event_msg_gen, last_block_msg_gen)
         for log in msg_gen_logs:
+            print("new message", log["args"]["message"])
             db.save_message(
                 message=log["args"]["message"],
                 wallet_address=log["args"]["user"]
             )
+            last_block_msg_gen = log["blockNumber"] + 1
 
         ccip_sent_logs = utils.handle_sepolia_event(
-            event_ccip_sent, block_start)
+            event_ccip_sent, last_block_ccip_sent)
         for log in ccip_sent_logs:
+            print("new ccip request", log["args"]["message"])
             db.update_ccip_url(
                 message=log["args"]["text"],
                 transactionHash=log["transactionHash"].hex()
             )
-
-        block_start += 1
+            last_block_ccip_sent = log["blockNumber"] + 1
         await asyncio.sleep(3)
 
 
