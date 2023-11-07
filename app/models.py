@@ -58,7 +58,7 @@ class Message(BaseModel):
     signed_validators: Dict[Validator, Signature] = {}
     created_at: datetime
     created_by: str
-    ccip_sent: bool = False
+    ccip_url: str = ""
 
     def __getitem__(self, item):
         return getattr(self, item)
