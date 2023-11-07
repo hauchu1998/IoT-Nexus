@@ -227,7 +227,7 @@ export function ValidatePage() {
                               (validator) =>
                                 validator.wallet_address === address
                             ) ? (
-                              <div className="container w-[70%]">
+                              <div className="container w-full">
                                 <Button
                                   disabled
                                   color="light-green"
@@ -238,7 +238,7 @@ export function ValidatePage() {
                                 </Button>
                               </div>
                             ) : (
-                              <div className="container w-[70%]">
+                              <div className="container w-full">
                                 <Button
                                   color="green"
                                   size="md"

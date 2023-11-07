@@ -281,10 +281,10 @@ export function UserData() {
                             </td>
                             <td className={`flex-center-wrap ${className}`}>
                               {!ccip_sent && completion > 0.7 && (
-                                <div className="container w-[70%]">
+                                <div className="container w-full">
                                   <Button
                                     color="green"
-                                    size=""
+                                    size="md"
                                     className="w-full"
                                     onClick={() =>
                                       handleSendMessageCCIP(message)
