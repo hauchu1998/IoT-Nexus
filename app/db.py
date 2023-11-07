@@ -2,11 +2,12 @@ from datetime import timedelta
 from random import randrange
 import datetime
 import random
-from typing import Dict
+from typing import Dict, Tuple
 
 
 from py_cc.keys import PrivateKey
 from py_cc.certificate import Attestor
+from py_cc.signature import Signature as SignatureCc
 from app.models import Validator, Message, Signature
 from app.utils import sign_message, gen_sk
 
@@ -18,6 +19,7 @@ tmp_key_map: Dict[str, PrivateKey] = {}
 validators: Dict[str, Validator] = {}
 attestors: Dict[str, Attestor] = {}
 messages: Dict[str, Message] = {}
+signatures: Dict[Tuple[str, Validator], SignatureCc] = {}
 
 # ==================
 # Define functions
@@ -52,11 +54,16 @@ def update_ccip_url(message: str, transactionHash: str):
     messages[message].ccip_url = transactionHash
 
 
-def save_signature(message: str, validator: Validator, signature):
+def save_signature(message: str, validator: Validator, signature: SignatureCc):
     messages[message].signed_validators[validator] = Signature(
         r=[str(signature.r.x), str(signature.r.y)],
         s=str(signature.s)
     )
+    signatures[(message, validator)] = signature
+
+
+def get_signature_cc(message: str, validator: Validator) -> SignatureCc:
+    return signatures[(message, validator)]
 
 
 def save_validator(private_key, public_key, weight, wallet_address):
@@ -93,7 +100,7 @@ def get_messages():
 
 # Create validators and messages for testing
 N_VALIDATORS = 10
-N_MESSAGES = 100
+N_MESSAGES = 30
 for i in range(N_VALIDATORS):
     sk = gen_sk()
     pk = sk.get_public_key()
@@ -154,6 +161,7 @@ for _ in range(N_MESSAGES):
             r=[str(signature.r.x), str(signature.r.y)],
             s=str(signature.s)
         )
+        signatures[(message, v)] = signature
 
     messages[message] = Message(
         message=message,

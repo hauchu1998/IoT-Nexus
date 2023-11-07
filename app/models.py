@@ -19,7 +19,6 @@ class SaveMessageRequest(BaseModel):
 
 
 class GenProofRequest(BaseModel):
-    count: int
     message: str
 
 

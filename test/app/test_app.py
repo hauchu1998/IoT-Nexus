@@ -103,11 +103,16 @@ def test_signIn():
 
 
 def test_genProof():
+    mm = None
+    for m in messages.values():
+        if m.signed_validators:
+            mm = m
+            break
+
     response = client.post(
         "/api/genProof",
         json={
-            "count": 2,
-            "message": message.message
+            "message": mm.message
         }
     )
     assert response.status_code == 200
